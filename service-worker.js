@@ -1,16 +1,15 @@
-
-const CACHE = 'flashcards-pwa-v1';
+// service-worker.js
+const CACHE = 'flashcards-pwa-v3'; // bump this
 const ASSETS = [
   './',
   './index.html',
   './index_csv.html',
   './flashcards-app.js',
-  './manifest.json',
-  './flashcards.csv'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
 });
 
@@ -22,18 +21,33 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+  const isCSV = url.pathname.endsWith('/flashcards.csv');
+
+  if (isCSV) {
+    // Network-first for CSV + no-store to defeat HTTP cache
+    e.respondWith(
+      fetch(new Request(e.request, { cache: 'no-store' }))
+        .then(r => {
+          const copy = r.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          return r;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Default: cache-first, then network
   e.respondWith(
     caches.match(e.request).then(cached => {
-      const fetchPromise = fetch(e.request).then(networkRes => {
-        try {
-          if (e.request.method === 'GET' && networkRes.status === 200 && networkRes.type === 'basic') {
-            const copy = networkRes.clone();
-            caches.open(CACHE).then(cache => cache.put(e.request, copy));
-          }
-        } catch {}
-        return networkRes;
+      const fetched = fetch(e.request).then(r => {
+        if (e.request.method === 'GET' && r.ok && r.type === 'basic') {
+          caches.open(CACHE).then(c => c.put(e.request, r.clone())).catch(() => {});
+        }
+        return r;
       }).catch(() => cached);
-      return cached || fetchPromise;
+      return cached || fetched;
     })
   );
 });
