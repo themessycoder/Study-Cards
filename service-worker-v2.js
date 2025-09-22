@@ -5,7 +5,6 @@ const ASSETS = [
   './index.html',
   './flashcards-app.js',
   './manifest.json'
-  // ❌ DO NOT include './flashcards.csv'
 ];
 
 self.addEventListener('install', e => {
@@ -22,7 +21,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  const isCSV = url.pathname.endsWith('/flashcards99.csv');
+  const isCSV = url.pathname.endsWith('/flashcards.csv');
 
   if (isCSV) {
     e.respondWith(
@@ -34,9 +33,6 @@ self.addEventListener('fetch', e => {
         })
         .catch(() => caches.match(e.request))
     );
-    return;
-  }
-  else {
     return;
   }
 
