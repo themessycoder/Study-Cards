@@ -75,12 +75,12 @@ footer{color:var(--muted);padding:14px;padding-bottom:calc(12px + env(safe-area-
   </main>
   <footer>Flashcards PWA • Offline • iPhone-friendly layout</footer>
   
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker-v2.js?v=6'); // new name + version
-    }
-  </script>
-  
-  <script src="flashcards-app.js"></script>
+<script defer src="./flashcards-app.js?v=6"></script>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker-v2.js?v=6');
+  window.addEventListener('DOMContentLoaded', () => {
+    window.__FlashcardsApp__.initFromCSV('./flashcards.csv?v=' + Date.now());
+  });
+</script>
   
 </body></html>
